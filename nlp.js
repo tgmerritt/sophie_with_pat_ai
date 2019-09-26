@@ -64,6 +64,11 @@ async function queryDialogFlow(text, conversationPayload, callback) {
     // Create a new session
     const sessionClient = new dialogflow.SessionsClient();
     const sessionPath = sessionClient.sessionPath(process.env.DIALOG_FLOW_PROJECT_ID, sessionId);
+    const knowbase = new dialogflow.v2beta1.KnowledgeBasesClient();
+    // const knowledgeBasePath = knowbase.knowledgeBasePath(
+    //     process.env.DIALOG_FLOW_PROJECT_ID,
+    //     "MTY2ODYxNDQ0ODI2NjM0NjQ5Ng"
+    // );
 
     // Context is used for continuing a conversation - for now with Dialogflow, assume every utterance is unique (will implement context in a next step)
     // let contextPayload = (typeof conversationPayload === 'undefined' || conversationPayload === '' || conversationPayload === null) ? JSON.parse("{}") : {
@@ -81,12 +86,27 @@ async function queryDialogFlow(text, conversationPayload, callback) {
                 languageCode: 'en-US',
             },
         },
+        queryParams: {
+            knowledgeBaseNames: ["projects/newagent-cidtks/knowledgeBases/MTY2ODYxNDQ0ODI2NjM0NjQ5Ng"],
+        },
     };
 
     // Send request and log result
     const responses = await sessionClient.detectIntent(request);
-    // console.log('Detected Dialogflow intent');
     const result = responses[0].queryResult;
+    console.log(`Query text: ${result.queryText}`);
+    console.log(`Detected Intent: ${result.intent.displayName}`);
+    console.log(`Confidence: ${result.intentDetectionConfidence}`);
+    console.log(`Query Result: ${result.fulfillmentText}`);
+    if (result.knowledgeAnswers && result.knowledgeAnswers.answers) {
+        const answers = result.knowledgeAnswers.answers;
+        console.log(`There are ${answers.length} answer(s);`);
+        answers.forEach(a => {
+            console.log(`   answer: ${a.answer}`);
+            console.log(`   confidence: ${a.matchConfidence}`);
+            console.log(`   match confidence level: ${a.matchConfidenceLevel}`);
+        });
+    }
     // console.log(`  Query: ${result.queryText}`);
     // console.log(`  Response: ${result.fulfillmentText}`);
     if (result.intent) {
@@ -102,6 +122,31 @@ async function queryDialogFlow(text, conversationPayload, callback) {
     }
 }
 
+async function queryPatAi(text, auth_token, conversationPayload, callback) {
+    fetch('https://app.patai.staging.wpengine.com/api/public/v1/converse', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Authorization': auth_token,
+            },
+            body: JSON.stringify({
+                data_to_match: text,
+                user_key,
+            }),
+        })
+        .then(response => response.json())
+        .then(response => {
+            let speech = response.data.converse_response.CurrentResponse.WhatSaid;
+            let instructions = {}; // Instructions will be the emotion / expression we send to UneeQ from NLP - will need to be a custom trigger in Dialogflow, perhaps using Context variables (like Watson).  For now, empty
+            let conversationPayload = {
+                "instructions": instructions,
+                "context": response.data.user_key
+            }; // Payload will also be populated in the future, for now empty
+            callback(speech, instructions, conversationPayload);
+        })
+        .catch(error => console.error(error));
+}
+
 let setEmotion = (emotion) => {
     console.log("Emotion being set = " + emotion);
     emotionState = emotion;
@@ -110,6 +155,6 @@ let setEmotion = (emotion) => {
 module.exports = {
     getConverseResult: getWatsonResult,
     getDialogFlowResult: queryDialogFlow,
-    setEmotion: setEmotion
-
+    setEmotion: setEmotion,
+    getPatAiResult: queryPatAi
 };

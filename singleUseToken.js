@@ -6,13 +6,14 @@ const baseUrl = 'https://dal-eeva.faceme.com';
 const tokenEndpoint = '/api/v1/clients/access/tokens/';
 const apiKey = process.env.FM_API_KEY;
 const customerJwtSecret = process.env.CUSTOMER_JWT_SECRET;
+const pat_ai_client = process.env.PAT_AI_CLIENT;
+const pat_ai_secret = process.env.PAT_AI_SECRET;
 
 //Handle the post request
 let processPostRequest = (body, path, callback) => {
     console.log('Process ' + path);
     try {
         if (path == '/api/v1/watson/getSingleUseToken') {
-
             getSingleUserToken((token) => {
                 callback(token);
             });
@@ -64,11 +65,28 @@ async function getSingleUseToken() {
     })
 }
 
+function getPatAiToken() {
+    fetch(`https://app.patai.staging.wpengine.com/api/public/v1/authenticate?client=${pat_ai_client}&secret=${pat_ai_secret}&response_type=code`, {
+            method: 'GET',
+            cache: "no-cache",
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(response => {
+            auth_token = response.data.auth_token
+            return auth_token;
+        })
+        .catch(error => console.error('Error:', error))
+}
+
 let startServer = (port) => {
     server.createServer(port, processPostRequest)
 }
 
 module.exports = {
     startServer: startServer,
-    getSingleUseToken: getSingleUseToken
+    getSingleUseToken: getSingleUseToken,
+    getPatAiToken: getPatAiToken
 };

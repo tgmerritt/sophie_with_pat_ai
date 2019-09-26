@@ -1,5 +1,6 @@
 let server = new require("./server.js");
 let nlp = new require("./nlp.js");
+let singleUseToken = new require("./singleUseToken.js");
 
 //Handle the post request
 let processPostRequest = (body, path, callback) => {
@@ -31,8 +32,31 @@ let processPostRequest = (body, path, callback) => {
 
     } else if (path == '/v2/{session=projects/*/agent/sessions/*}:detectIntent') {
         waitForDialogFlow(body, callback);
+    } else if (path == '/api/public/v1/converse') {
+        if (body['fm-custom-data'].length > 0) {
+            waitForPatAi(body, callback, body['fm-custom-data']); // We have the Auth Token and have passed it to UneeQ on first inquiry
+        } else {
+            var token = singleUseToken.getPatAiToken();
+            waitForPatAi(body, callback, token); // We just got a token so we'll send it along with our first request to Pat AI
+        }
+
     }
 
+}
+
+async function waitForPatAi(body, callback, token) {
+    console.log("Connect to Pat AI and send transcript");
+    await nlp.queryPatAi(body['fm-question'], token, body['fm-conversation'], (speech, instructions, conversationPayload) => {
+        let avatarResponse = {
+            'answer': speech,
+            'instructions': instructions
+        };
+        callback(JSON.stringify({
+            "answer": JSON.stringify(avatarResponse),
+            "matchedContext": "",
+            conversationPayload: JSON.stringify(conversationPayload)
+        }));
+    })
 }
 
 async function waitForDialogFlow(body, callback) {
