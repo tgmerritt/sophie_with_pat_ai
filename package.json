@@ -15,7 +15,11 @@
     "jade": "~1.11.0",
     "jwt-simple": "^0.5.6",
     "morgan": "~1.9.1",
-    "request": "^2.88.0"
+    "nodemon": "^1.19.3",
+    "request": "^2.88.0",
+    "tslint": "^5.20.0",
+    "typescript": "^2.3.0",
+    "uneeq-js": "^2.25.2"
   },
   "author": "Tyler Merritt",
   "license": "MIT",
