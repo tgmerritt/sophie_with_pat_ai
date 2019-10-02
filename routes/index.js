@@ -14,7 +14,7 @@ router.post('/transcript', function (req, res, next) {
   // console.log('body = ' + req.body);
   // The second param for processPostRequest really just acts as the value in a switch statement, we can re-write this to send 'watson' or 'dialogflow' as a string to the underlying call to NLP
   // In the future, it would be best to dynamically pass in which NLP we should query in the POST itself, providing customers flexibility 
-  handleTranscript.processPostRequest(req.body, '/v2/{session=projects/*/agent/sessions/*}:detectIntent', (responseBody) => {
+  handleTranscript.processPostRequest(req.body, '/api/public/v1/converse', (responseBody) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.write(responseBody);

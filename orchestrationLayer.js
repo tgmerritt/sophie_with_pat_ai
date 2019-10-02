@@ -5,7 +5,6 @@ let singleUseToken = new require("./singleUseToken.js");
 //Handle the post request
 let processPostRequest = (body, path, callback) => {
     console.log('Process ' + path);
-
     if (path == '/api/v1/watson/converse') {
         try {
             if (body.constructor !== Object) {
@@ -33,20 +32,28 @@ let processPostRequest = (body, path, callback) => {
     } else if (path == '/v2/{session=projects/*/agent/sessions/*}:detectIntent') {
         waitForDialogFlow(body, callback);
     } else if (path == '/api/public/v1/converse') {
-        if (body['fm-custom-data'].length > 0) {
-            waitForPatAi(body, callback, body['fm-custom-data']); // We have the Auth Token and have passed it to UneeQ on first inquiry
-        } else {
-            var token = singleUseToken.getPatAiToken();
-            waitForPatAi(body, callback, token); // We just got a token so we'll send it along with our first request to Pat AI
-        }
-
+        waitForPatAi(body, callback);
     }
-
 }
 
-async function waitForPatAi(body, callback, token) {
+async function waitForPatAi(body, callback) {
+
+    console.log("Entered PAT AI loop");
+    let token = '';
+    if (body['fm-custom-data'].length > 0) {
+        console.log("PAT AI token present");
+        // Because the getPatAiToken() function returns a Promise, we should make sure that this block also returns a promise even though there is nothing async about it
+        token = new Promise(function (resolve, reject) {
+            resolve(body['fm-custom-data']);
+            reject(console.log("the body[fm-custom-data] value did not return for some reason?"));
+        })
+    } else {
+        console.log("PAT AI token not present - requesting...");
+        token = singleUseToken.getPatAiToken();
+    }
+
     console.log("Connect to Pat AI and send transcript");
-    await nlp.queryPatAi(body['fm-question'], token, body['fm-conversation'], (speech, instructions, conversationPayload) => {
+    await nlp.getPatAiResult(body['fm-question'], token, body['fm-conversation'], (speech, instructions, conversationPayload) => {
         let avatarResponse = {
             'answer': speech,
             'instructions': instructions

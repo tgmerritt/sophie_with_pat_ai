@@ -2,6 +2,7 @@ let jwt = require('jwt-simple');
 let request = require('request');
 let server = new require("./server.js");
 
+const fetch = require('node-fetch');
 const baseUrl = 'https://dal-eeva.faceme.com';
 const tokenEndpoint = '/api/v1/clients/access/tokens/';
 const apiKey = process.env.FM_API_KEY;
@@ -66,7 +67,7 @@ async function getSingleUseToken() {
 }
 
 function getPatAiToken() {
-    fetch(`https://app.patai.staging.wpengine.com/api/public/v1/authenticate?client=${pat_ai_client}&secret=${pat_ai_secret}&response_type=code`, {
+    return fetch(`https://app.pat.ai/api/public/v1/authenticate?client=${pat_ai_client}&secret=${pat_ai_secret}&response_type=code`, {
             method: 'GET',
             cache: "no-cache",
             headers: {

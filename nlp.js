@@ -3,6 +3,7 @@
 let AssistantV1 = require('ibm-watson/assistant/v1');
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
+const fetch = require('node-fetch');
 
 let getWatsonResult = (text, conversationPayload, callback) => {
 
@@ -123,7 +124,7 @@ async function queryDialogFlow(text, conversationPayload, callback) {
 }
 
 async function queryPatAi(text, auth_token, conversationPayload, callback) {
-    fetch('https://app.patai.staging.wpengine.com/api/public/v1/converse', {
+    return fetch('https://app.pat.ai/api/public/v1/converse', {
             method: 'POST',
             headers: {
                 'Content-type': 'application/json',
@@ -131,18 +132,23 @@ async function queryPatAi(text, auth_token, conversationPayload, callback) {
             },
             body: JSON.stringify({
                 data_to_match: text,
-                user_key,
+                user_key: "",
             }),
         })
         .then(response => response.json())
         .then(response => {
-            let speech = response.data.converse_response.CurrentResponse.WhatSaid;
-            let instructions = {}; // Instructions will be the emotion / expression we send to UneeQ from NLP - will need to be a custom trigger in Dialogflow, perhaps using Context variables (like Watson).  For now, empty
-            let conversationPayload = {
-                "instructions": instructions,
-                "context": response.data.user_key
-            }; // Payload will also be populated in the future, for now empty
-            callback(speech, instructions, conversationPayload);
+            if (response && response.data) {
+                let speech = response.data.converse_response.CurrentResponse.WhatSaid;
+                let instructions = {}; // Instructions will be the emotion / expression we send to UneeQ from NLP - will need to be a custom trigger in Dialogflow, perhaps using Context variables (like Watson).  For now, empty
+                let conversationPayload = {
+                    "instructions": instructions,
+                    "context": response.data.user_key
+                }
+                callback(speech, instructions, conversationPayload);
+            } else {
+                console.log("PAT Ai response wasn't as expected:", response);
+            };
+            // Payload will also be populated in the future, for now empty
         })
         .catch(error => console.error(error));
 }
