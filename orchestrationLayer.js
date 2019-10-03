@@ -38,6 +38,7 @@ let processPostRequest = (body, path, callback) => {
 
 async function waitForPatAi(body, callback) {
     let conversationPayload = JSON.parse(body['fm-conversation']);
+    console.log("conversation payload is:", conversationPayload);
     let token = await setPatAiToken(conversationPayload);
     console.log("Connect to Pat AI and send transcript");
     await nlp.getPatAiResult(body['fm-question'], token, conversationPayload, (speech, instructions, conversationPayload) => {
