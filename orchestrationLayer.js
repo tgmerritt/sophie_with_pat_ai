@@ -37,7 +37,14 @@ let processPostRequest = (body, path, callback) => {
 }
 
 async function waitForPatAi(body, callback) {
-    let conversationPayload = JSON.parse(body['fm-conversation']);
+    let conversationPayload = null
+
+    try {
+        conversationPayload = JSON.parse(body['fm-conversation']);
+    } catch (e) {
+        console.log('Blank fm-conversation on first dialog');
+    }
+
     // console.log("conversation payload is:", conversationPayload);
     let token = await setPatAiToken(conversationPayload);
     console.log("Connect to Pat AI and send transcript");
