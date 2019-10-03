@@ -124,6 +124,10 @@ async function queryDialogFlow(text, conversationPayload, callback) {
 }
 
 async function queryPatAi(text, auth_token, conversationPayload, callback) {
+    let conversation_context = ''
+    if (conversationPayload !== null && conversationPayload['context'].length > 1) {
+        conversation_context = conversationPayload['context'];
+    }
     return fetch('https://app.pat.ai/api/public/v1/converse', {
             method: 'POST',
             headers: {
@@ -132,7 +136,7 @@ async function queryPatAi(text, auth_token, conversationPayload, callback) {
             },
             body: JSON.stringify({
                 data_to_match: text,
-                user_key: "",
+                user_key: conversation_context,
             }),
         })
         .then(response => response.json())
@@ -142,7 +146,8 @@ async function queryPatAi(text, auth_token, conversationPayload, callback) {
                 let instructions = {}; // Instructions will be the emotion / expression we send to UneeQ from NLP - will need to be a custom trigger in Dialogflow, perhaps using Context variables (like Watson).  For now, empty
                 let conversationPayload = {
                     "instructions": instructions,
-                    "context": response.data.user_key
+                    "context": response.data.user_key,
+                    "auth_token": auth_token
                 }
                 callback(speech, instructions, conversationPayload);
             } else {

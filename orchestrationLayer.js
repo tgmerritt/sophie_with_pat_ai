@@ -37,24 +37,10 @@ let processPostRequest = (body, path, callback) => {
 }
 
 async function waitForPatAi(body, callback) {
-
-    console.log("Entered PAT AI loop");
-    let token = '';
-    if (body['fm-custom-data'].length > 0) {
-        console.log("PAT AI token present");
-        // Because the getPatAiToken() function returns a Promise, we should make sure that this block also returns a promise even though there is nothing async about it
-        token = await new Promise(function (resolve, reject) {
-            resolve(body['fm-custom-data']);
-            reject(console.log("the body[fm-custom-data] value did not return for some reason?"));
-        })
-    } else {
-        console.log("PAT AI token not present - requesting...");
-        token = await singleUseToken.getPatAiToken();
-    }
-
+    let conversationPayload = JSON.parse(body['fm-conversation']);
+    let token = await setPatAiToken(conversationPayload);
     console.log("Connect to Pat AI and send transcript");
-    // We are chaining Promises by passing token, which at this point is a Promise, into the next async function
-    await nlp.getPatAiResult(body['fm-question'], token, body['fm-conversation'], (speech, instructions, conversationPayload) => {
+    await nlp.getPatAiResult(body['fm-question'], token, conversationPayload, (speech, instructions, conversationPayload) => {
         let avatarResponse = {
             'answer': speech,
             'instructions': instructions
@@ -65,6 +51,22 @@ async function waitForPatAi(body, callback) {
             conversationPayload: JSON.stringify(conversationPayload)
         }));
     })
+}
+
+async function setPatAiToken(conversationPayload) {
+    console.log("Entered PAT AI loop");
+    let token = '';
+    if (conversationPayload !== null && conversationPayload['auth_token'].length > 1) {
+        console.log("PAT AI token present");
+        // Because the getPatAiToken() function returns a Promise, we should make sure that this block also returns a promise even though there is nothing async about it
+        token = await new Promise(function (resolve, reject) {
+            resolve(conversationPayload['auth_token']);
+        })
+    } else {
+        console.log("PAT AI token not present - requesting...");
+        token = await singleUseToken.getPatAiToken();
+    }
+    return token;
 }
 
 async function waitForDialogFlow(body, callback) {
